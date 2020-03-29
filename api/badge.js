@@ -8,11 +8,6 @@ router.get('/:username/:repo', async ctx => {
     ...repo
   } = await getRepo(pathname)
 
-  if (ctx.query.s) {
-    ctx.body = repo
-    return
-  }
-
   ctx.body = {
     schemaVersion: 1,
     label: 'trustme',
