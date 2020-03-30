@@ -1,5 +1,5 @@
 const router = require('koa-router')({ prefix: '/badge' })
-const { getRepo, getLatestCommit } = require('./github')
+const { getRepo, getCommits } = require('./github')
 
 router.get('/:username/:repo', async ctx => {
   const pathname = `${ctx.params.username}/${ctx.params.repo}`
@@ -30,8 +30,8 @@ router.get('/:username/:repo', async ctx => {
   }
 
   commitsUrl = commitsUrl.replace('{/sha}', '')
-  const { commit } = await getLatestCommit(commitsUrl)
-  const commitDate = new Date(commit.author.date)
+  const { latestCommit } = await getCommits(commitsUrl)
+  const commitDate = new Date(latestCommit.commit.author.date)
   const aWeekAgo = new Date()
   aWeekAgo.setDate(aWeekAgo.getDate() - 7)
 
