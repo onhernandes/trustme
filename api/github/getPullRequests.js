@@ -8,19 +8,14 @@ module.exports = async apiUrl => {
     console.error(e)
   }
 
-  console.log(
-    data
-      .filter(pr => pr.state === 'open')
-      .sort((firstEl, secondEl) => new Date(firstEl.updated_at) < new Date(secondEl.updated_at))
-      .shift().updated_at
-  )
   return {
     totalPullRequests: data.length,
     lastOpenedPullRequest: data
       .filter(pr => pr.state === 'open')
-      .sort((firstEl, secondEl) => new Date(firstEl.updated_at) < new Date(secondEl.updated_at))
       .shift(),
-    lastClosedPullRequest: data,
+    lastClosedPullRequest: data
+      .filter(pr => pr.state === 'closed')
+      .shift(),
     all: data
   }
 }

@@ -32,7 +32,14 @@
         </div>
       </div>
 
-      <div class="columns" v-show="rules.length > 0">
+      <div class="columns" v-show="error">
+        <div class="column">
+          <h2 class="subtitle">Oops! There was an error!</h2>
+          <span>{{ error }}</span>
+        </div>
+      </div>
+
+      <div class="columns" v-show="rules.length > 0 && !error">
         <div class="column">
           <h2 class="subtitle">What we found out...</h2>
           <ul class="rules">
@@ -48,6 +55,8 @@
 
 <script>
 import { getRepo, getCommits, getPullRequests, getIssues } from '../api/github'
+import { format } from 'date-fns'
+
 export default {
   name: 'App',
   data () {
@@ -55,7 +64,8 @@ export default {
       url: '',
       isDanger: '',
       timeout: null,
-      rules: []
+      rules: [],
+      error: null
     }
   },
   methods: {
@@ -63,6 +73,7 @@ export default {
       clearTimeout(this.timeout)
       this.timeout = null
       this.rules = []
+      this.error = null
       let isURL = false
       let isRepo = false
       let repo = null
@@ -79,7 +90,6 @@ export default {
         const regexResult = this.url.match(/.+\/.+/g)
         isRepo = Array.isArray(regexResult)
         repo = this.url
-        console.log({ regexResult })
       }
 
       if (!isURL && !isRepo) {
@@ -103,16 +113,15 @@ export default {
           stargazers: { count: repo.stargazers_count },
           forks: { count: repo.forks },
           openIssues: { count: repo.open_issues_count },
-          lastClosedIssue: { date: lastClosedIssue ? lastClosedIssue.closed_at : null },
+          lastClosedIssue: { date: lastClosedIssue ? new Date(lastClosedIssue.closed_at) : null },
           license: { name: repo.license ? repo.license.name : null },
           archived: { status: repo.archived },
           disabled: { status: repo.disabled },
           language: { name: repo.language },
           totalOpenPullRequests: { count: pullRequests.all.filter(pr => pr.state === 'open').length },
-          lastClosedPullRequest: { date: pullRequests.lastClosed ? pullRequests.lastClosed.updated_at : null },
-          lastOpenedPullRequest: { date: pullRequests.lastOpened ? pullRequests.lastOpened.updated_at : null },
-          latestCommit: { date: latestCommit ? latestCommit.commit.author.date : null },
-          allPr: pullRequests.all
+          lastClosedPullRequest: { date: pullRequests.lastClosedPullRequest ? new Date(pullRequests.lastClosedPullRequest.updated_at) : null },
+          lastOpenedPullRequest: { date: pullRequests.lastOpenedPullRequest ? new Date(pullRequests.lastOpenedPullRequest.updated_at) : null },
+          latestCommit: { date: latestCommit ? new Date(latestCommit.commit.author.date) : null }
         }
         this.applyRules(rules)
       } catch (e) {
@@ -120,7 +129,12 @@ export default {
       }
     },
     applyRules (rules) {
-      const formatDate = date => date
+      const formatDate = date => {
+        date = new Date(date)
+
+        return format(date, 'dd/MM/yyyy HH:mm')
+      }
+
       const aWeekAgo = new Date()
       aWeekAgo.setDate(aWeekAgo.getDate() - 7)
 
@@ -140,7 +154,7 @@ export default {
           color: count > 10 ? 'success' : (count === 0 && !rules.lastClosedIssue.date ? 'danger' : undefined)
         }),
         lastClosedIssue: ({ date }) => ({
-          message: date ? `Last closed issue were at ${formatDate(date)}` : 'Could not find last closed issue',
+          message: date ? `Last closed issue were on ${formatDate(date)}` : 'Could not find last closed issue',
           color: !date && rules.openIssues === 0 ? 'danger' : undefined
         }),
         license: ({ name }) => ({
@@ -163,15 +177,15 @@ export default {
           color: count > 10 ? 'success' : undefined
         }),
         lastClosedPullRequest: ({ date }) => ({
-          message: date ? `Last closed pull request were at ${formatDate(date)}` : 'We could not find last closed pull request',
+          message: date ? `Last closed pull request were on ${formatDate(date)}` : 'We could not find last closed pull request',
           color: date > aWeekAgo ? 'success' : (date > aMonthAgo ? 'warning' : 'danger')
         }),
         lastOpenedPullRequest: ({ date }) => ({
-          message: date ? `Last opened pull request were at ${formatDate(date)}` : 'We could not find last opened pull request',
+          message: date ? `Last opened pull request were on ${formatDate(date)}` : 'We could not find last opened pull request',
           color: date > aWeekAgo ? 'success' : (date > aMonthAgo ? 'warning' : 'danger')
         }),
         latestCommit: ({ date }) => ({
-          message: date ? `Latest commit were at ${formatDate(date)}` : 'No commits found',
+          message: date ? `Latest commit were on ${formatDate(date)}` : 'No commits found',
           color: date ? (date > aWeekAgo ? 'success' : 'warning') : 'danger'
         })
       }

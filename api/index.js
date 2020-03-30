@@ -6,9 +6,6 @@ const cors = require('@koa/cors')
 app.use(bodyParser())
 app.use(cors())
 
-const repo = require('./repo')
-app.use(repo.routes())
-
 const badge = require('./badge')
 app.use(badge.routes())
 

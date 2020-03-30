@@ -39,7 +39,6 @@ router.get('/:username/:repo', async ctx => {
     ctx.body.isError = true
     ctx.body.message = 'updated a week ago or more'
     ctx.body.color = 'orange'
-    return
   }
 })
 
